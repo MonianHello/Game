@@ -19,10 +19,7 @@ def getnews():
     return news
 
 def check_string(string):
-   pattern = re.compile('[^a-zA-Z0-9@.]')
-   if pattern.search(string):
-      return True
-   elif len(string) == 0:
+   if len(string) == 0:
       return True
    else:
       return False
@@ -107,11 +104,11 @@ class registerPage:
         global username,password,main,login
         username = self.ui.username.text()
         password = self.ui.password.text()
-        email = self.ui.email.text()
-        if check_string(username) or check_string(password) or check_string(email):
+        invitationcode = self.ui.invitationcode.text()
+        if check_string(username) or check_string(password) or check_string(invitationcode):
             alert.illegal()
             return 0
-        json = {'mode':'register','username':username,'password':password,'email':email}
+        json = {'mode':'register','username':username,'password':password,'invitationcode':invitationcode}
         output = clientsocket(json)
         if output["status"] == "success":
             alert.registerSuccess(username)
@@ -122,6 +119,8 @@ class registerPage:
             alert.registerFail()
         elif output["status"] == "illegal":
             alert.illegal()
+        elif output["status"] == "errorinvitationcode":
+            alert.errorinvitationcode()
 
 class mainPage:
 
@@ -136,7 +135,7 @@ class alert:
         msg.setText("用户名已存在")
         msg.setWindowTitle("注册失败")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
     def registerSuccess(username):
         msg = QMessageBox()
@@ -144,7 +143,7 @@ class alert:
         msg.setText("用户 "+username+" 注册成功")
         msg.setWindowTitle("注册成功")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
     def loginFail():
         msg = QMessageBox()
@@ -152,7 +151,7 @@ class alert:
         msg.setText("用户名或密码错误")
         msg.setWindowTitle("登录失败")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
     def loginSuccess(username):
         msg = QMessageBox()
@@ -160,15 +159,15 @@ class alert:
         msg.setText("用户 "+username+" 登录成功")
         msg.setWindowTitle("登录成功")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
     def illegal():
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Critical)
-        msg.setText("含有非法字符")
+        msg.setText("非法操作")
         msg.setWindowTitle("非法操作")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
     def netError():
         msg = QMessageBox()
@@ -176,7 +175,15 @@ class alert:
         msg.setText("无法连接到服务器")
         msg.setWindowTitle("连接失败")
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
+
+    def errorinvitationcode():
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText("此邀请码无效或已被使用")
+        msg.setWindowTitle("验证失败")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
 if __name__ == '__main__':
     app = QApplication([])
