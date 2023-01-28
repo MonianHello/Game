@@ -9,6 +9,15 @@ import re
 config = configparser.ConfigParser()
 config.read('config.ini')
 
+def getnews():
+    global news
+    json = {'mode':'news'}
+    try :
+        news = clientsocket(json)["content"]
+    except:
+        news = "无法连接到服务器"
+    return news
+
 def check_string(string):
    pattern = re.compile('[^a-zA-Z0-9@.]')
    if pattern.search(string):
@@ -18,11 +27,26 @@ def check_string(string):
    else:
       return False
 
+def clientsocket(json):
+    clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = config.get('network', 'ip')
+    port = int(config.get('network', 'port'))
+    try:
+        clientsocket.connect((host, port))
+    except:
+        alert.netError()
+        return 0   
+    clientsocket.send(str(json).encode('utf-8'))
+    output = ast.literal_eval(clientsocket.recv(1024).decode('utf-8'))
+    print(output)
+    clientsocket.close()
+    return(output)
+
 class loginPage:
 
     def __init__(self):
         self.ui = QUiLoader().load('login.ui')
-        self.ui.textBrowser.setText("暂无公告")
+        self.ui.textBrowser.setText(news)
         self.ui.LoginButton.clicked.connect(self.pushButton_clicked)
         self.ui.toRegister.clicked.connect(self.toRegister)
         if config["login"]["username"]:
@@ -43,29 +67,16 @@ class loginPage:
         if check_string(username) or check_string(password):
             alert.illegal()
             return 0
-        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host = config.get('network', 'ip')
-        port = int(config.get('network', 'port'))
-        try:
-            clientsocket.connect((host, port))
-        except:
-            alert.netError()
-            return 0
         json = {'mode':'login','username':username,'password':password}
-        clientsocket.send(str(json).encode('utf-8'))
-        output = ast.literal_eval(clientsocket.recv(1024).decode('utf-8'))
-        print(output)
-        clientsocket.close()
+        output = clientsocket(json)
         if output["status"] == "success":
             alert.loginSuccess(username)
             if self.ui.remember.isChecked():
-                print("选择了记住密码，正在写入相关信息")
                 with open('config.ini', 'w') as configfile:
                     config["login"]["username"]=username
                     config["login"]["password"]=password
                     config.write(configfile)
             else:
-                print("取消了记住密码，正在删除相关信息")
                 with open('config.ini', 'w') as configfile:
                     config["login"]["username"]=""
                     config["login"]["password"]=""
@@ -82,9 +93,9 @@ class registerPage:
      
     def __init__(self):
         self.ui = QUiLoader().load('register.ui')
+        self.ui.textBrowser.setText(news)
         self.ui.RegisterButton.clicked.connect(self.pushButton_clicked)
         self.ui.BackButton.clicked.connect(self.back)
-        self.ui.textBrowser.setText("目前禁止注册")
 
     def back(self):
         global login
@@ -100,19 +111,8 @@ class registerPage:
         if check_string(username) or check_string(password) or check_string(email):
             alert.illegal()
             return 0
-        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host = config.get('network', 'ip')
-        port = int(config.get('network', 'port'))
-        try:
-            clientsocket.connect((host, port))
-        except:
-            alert.netError()
-            return 0
         json = {'mode':'register','username':username,'password':password,'email':email}
-        clientsocket.send(str(json).encode('utf-8'))
-        output = ast.literal_eval(clientsocket.recv(1024).decode('utf-8'))
-        print(output)
-        clientsocket.close()
+        output = clientsocket(json)
         if output["status"] == "success":
             alert.registerSuccess(username)
             login = loginPage()
@@ -129,7 +129,7 @@ class mainPage:
         self.ui = QUiLoader().load('main.ui')
 
 class alert:
-    
+
     def registerFail():
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -169,7 +169,7 @@ class alert:
         msg.setWindowTitle("非法操作")
         msg.setStandardButtons(QMessageBox.Ok)
         retval = msg.exec_()
-    
+
     def netError():
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
@@ -180,6 +180,7 @@ class alert:
 
 if __name__ == '__main__':
     app = QApplication([])
+    getnews()
     login = loginPage()
     login.ui.show()
     app.exec_()
