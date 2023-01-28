@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Login</class>
+ <widget class="QDialog" name="Login">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>260</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>汉仪文黑-85W</family>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>主页面</string>
+  </property>
+  <property name="modal">
+   <bool>false</bool>
+  </property>
+  <widget class="QPushButton" name="ExitButton">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>200</y>
+     <width>61</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>退出</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>ExitButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Login</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>444</x>
+     <y>216</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>486</x>
+     <y>229</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
