@@ -56,6 +56,8 @@ elif choice == 2:
 
 elif choice == 3:
     print("="*20)
+    with open('invitationcode.txt', 'w') as f:
+        f.write('')
     cursor.execute("TRUNCATE `game`.`invitationcode`")
     db.close()
     print("操作已完成")

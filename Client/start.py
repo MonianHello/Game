@@ -5,6 +5,7 @@ from PySide2.QtUiTools import QUiLoader
 import ast
 from PySide2.QtWidgets import QMessageBox
 import re
+import hashlib
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -64,7 +65,7 @@ class loginPage:
         if check_string(username) or check_string(password):
             alert.illegal()
             return 0
-        json = {'mode':'login','username':username,'password':password}
+        json = {'mode':'login','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest()}
         output = clientsocket(json)
         if output["status"] == "success":
             alert.loginSuccess(username)
@@ -108,7 +109,7 @@ class registerPage:
         if check_string(username) or check_string(password) or check_string(invitationcode):
             alert.illegal()
             return 0
-        json = {'mode':'register','username':username,'password':password,'invitationcode':invitationcode}
+        json = {'mode':'register','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'invitationcode':invitationcode}
         output = clientsocket(json)
         if output["status"] == "success":
             alert.registerSuccess(username)
