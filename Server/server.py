@@ -10,15 +10,10 @@ import threading
 import colorama
 
 colorama.init()
-# 多线程：threading.Thread(target=beep, args=(3,500,2000)).start()
-
 config = configparser.ConfigParser()
 config.read('config.ini')
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = config.get('network', 'ip')
 port = int(config.get('network', 'port'))
-serversocket.bind((host, port))
-serversocket.listen(48)
 
 def beep( times = 1 , duration = 500 , Hz = 1000 , breaks = 0.5 ):
    # times - 次数(次)
@@ -99,6 +94,7 @@ def register(username,password,code):
       print("用户尝试注册时，服务器发生了以下错误：")
       print(e , "\n")
       return str({'mode':'register','status':'fail'}).encode('utf-8')
+   
 def news():
    try:
       with open("news.html",'r',encoding='utf-8') as f:
@@ -110,31 +106,38 @@ def news():
       print(e , "\n")
       return str({'mode':'news','content':"服务器内部故障"}).encode('utf-8')
 
-def main():
-   while True:
-      clientsocket,addr = serversocket.accept()
-      # "[",str(datetime.datetime.now())[:19],str(addr),"]",
-      input = clientsocket.recv(1024).decode('utf-8')
-      print("入站：",input)
-      try:
-         input = ast.literal_eval(input)
-      except Exception as e:
-         print("\n"+colorama.Fore.RED + colorama.Back.WHITE + "  INBOUND CONTENT ERROR  " + colorama.Fore.RESET + colorama.Back.RESET + "\n")
-         print("尝试处理入站信息时，服务器发生了以下错误（入站信息非法）：")
-         print(e , "\n")
-      if input["mode"] == 'login':
-         output = login(input["username"],input["password"])
-         clientsocket.send(output)
-         print("出站：",output)
-      elif input["mode"] == "register":
-         output = register(input["username"],input["password"],input["invitationcode"])
-         clientsocket.send(output)
-         print("出站：",output)
-      elif input["mode"] == "news":
-         output = news()
-         clientsocket.send(output)
-         print("出站：",output)
-      clientsocket.close()
+def main(clientsocket,addr):
+   print()
+   print("{}:{} 连接到服务器".format(addr[0],addr[1]))
+   # "[",str(datetime.datetime.now())[:19],str(addr),"]",
+   input = clientsocket.recv(1024).decode('utf-8')
+   print("入站：",input)
+   try:
+      input = ast.literal_eval(input)
+   except Exception as e:
+      print("\n"+colorama.Fore.RED + colorama.Back.WHITE + "  INBOUND CONTENT ERROR  " + colorama.Fore.RESET + colorama.Back.RESET + "\n")
+      print("尝试处理入站信息时，服务器发生了以下错误：")
+      print(e , "\n")
+   if input["mode"] == 'login':
+      output = login(input["username"],input["password"])
+      clientsocket.send(output)
+      print("出站：",output)
+   elif input["mode"] == "register":
+      output = register(input["username"],input["password"],input["invitationcode"])
+      clientsocket.send(output)
+      print("出站：",output)
+   elif input["mode"] == "news":
+      output = news()
+      clientsocket.send(output)
+      print("出站：",output)
+   clientsocket.close()
 
+# 多线程：threading.Thread(target=beep, args=(3,500,2000)).start()
 
-main()
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind((host, port))
+server.listen()
+
+while True:
+   sock,addr = server.accept() # 阻塞式连接
+   threading.Thread(target=main, args=(sock, addr)).start() # 启动线程 
