@@ -110,7 +110,7 @@ def main(clientsocket,addr):
    print()
    print("{}:{} 连接到服务器".format(addr[0],addr[1]))
    # "[",str(datetime.datetime.now())[:19],str(addr),"]",
-   input = clientsocket.recv(1024).decode('utf-8')
+   input = clientsocket.recv(32768).decode('utf-8')
    print("入站：",input)
    try:
       input = ast.literal_eval(input)

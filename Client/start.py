@@ -5,7 +5,16 @@ from PySide2.QtUiTools import QUiLoader
 import ast
 from PySide2.QtWidgets import QMessageBox
 import re
+import os
 import hashlib
+
+# Initialize configuration file
+try:
+    with open("config.ini", "r") as file:
+        pass
+except FileNotFoundError:
+    with open("config.ini", "w") as file:
+        file.write('''[network]\nip = 127.0.0.1\nport = 7711\n\n[login]\nusername = \npassword = \n''')
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -27,15 +36,19 @@ def check_string(string):
 
 def clientsocket(json):
     clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = config.get('network', 'ip')
-    port = int(config.get('network', 'port'))
+    try:
+        host = config.get('network', 'ip')
+        port = int(config.get('network', 'port'))
+    except:
+        alert.configError()
+        return 0   
     try:
         clientsocket.connect((host, port))
     except:
         alert.netError()
         return 0   
     clientsocket.send(str(json).encode('utf-8'))
-    output = ast.literal_eval(clientsocket.recv(1024).decode('utf-8'))
+    output = ast.literal_eval(clientsocket.recv(32768).decode('utf-8'))
     print(output)
     clientsocket.close()
     return(output)
@@ -47,10 +60,31 @@ class loginPage:
         self.ui.textBrowser.setText(news)
         self.ui.LoginButton.clicked.connect(self.pushButton_clicked)
         self.ui.toRegister.clicked.connect(self.toRegister)
+        self.ui.remember.clicked.connect(self.rememberChecked)
         if config["login"]["username"]:
             self.ui.remember.setChecked(True)
-        self.ui.username.setText(config.get('login', 'username'))
-        self.ui.password.setText(config.get('login', 'password'))
+        try:
+            self.ui.username.setText(config.get('login', 'username'))
+            self.ui.password.setText(config.get('login', 'password'))
+        except:
+            alert.configError()
+            return 0
+        
+    def rememberChecked(self):
+        global username,password
+        username = self.ui.username.text()
+        password = self.ui.password.text()
+        if self.ui.remember.isChecked():
+            with open('config.ini', 'w') as configfile:
+                config["login"]["username"]=username
+                config["login"]["password"]=password
+                config.write(configfile)
+        else:
+            with open('config.ini', 'w') as configfile:
+                config["login"]["username"]=""
+                config["login"]["password"]=""
+                config.write(configfile)
+
 
     def toRegister(self):
         global register
@@ -69,16 +103,7 @@ class loginPage:
         output = clientsocket(json)
         if output["status"] == "success":
             alert.loginSuccess(username)
-            if self.ui.remember.isChecked():
-                with open('config.ini', 'w') as configfile:
-                    config["login"]["username"]=username
-                    config["login"]["password"]=password
-                    config.write(configfile)
-            else:
-                with open('config.ini', 'w') as configfile:
-                    config["login"]["username"]=""
-                    config["login"]["password"]=""
-                    config.write(configfile)
+            loginPage.rememberChecked(self)
             main = mainPage()
             main.ui.show()
             login.ui.close()
@@ -137,6 +162,16 @@ class alert:
         msg.setWindowTitle("注册失败")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
+
+    def configError():
+        os.remove("config.ini")
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("config.ini错误，请重启程序")
+        msg.setWindowTitle("配置文件错误")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+        exit(1)
 
     def registerSuccess(username):
         msg = QMessageBox()
