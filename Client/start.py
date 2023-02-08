@@ -1,29 +1,30 @@
+# -*- coding: UTF-8 -*_
 import configparser
 import socket
 from PySide2.QtWidgets import QApplication
 from PySide2.QtUiTools import QUiLoader
 import ast
 from PySide2.QtWidgets import QMessageBox
-import re
 import os
 import hashlib
+import base64
 
 # Initialize configuration file
 try:
-    with open("config.ini", "r") as file:
+    with open("config.ini", "r", encoding='utf-8') as file:
         pass
 except FileNotFoundError:
-    with open("config.ini", "w") as file:
+    with open("config.ini", "w", encoding='utf-8') as file:
         file.write('''[network]\nip = 127.0.0.1\nport = 7711\n\n[login]\nusername = \npassword = \n''')
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config.ini', encoding='utf-8')
 
 def getnews():
     global news
     json = {'mode':'news'}
     try :
-        news = clientsocket(json)["content"]
+        news = base64.b64decode(clientsocket(json)["content"]).decode('utf-8')
     except:
         news = "无法连接到服务器"
     return news
@@ -34,7 +35,8 @@ def check_string(string):
    else:
       return False
 
-def clientsocket(json):
+def clientsocket(jsons):
+    
     clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         host = config.get('network', 'ip')
@@ -47,8 +49,9 @@ def clientsocket(json):
     except:
         alert.netError()
         return 0   
-    clientsocket.send(str(json).encode('utf-8'))
+    clientsocket.send(str(jsons).encode('utf-8'))
     output = ast.literal_eval(clientsocket.recv(32768).decode('utf-8'))
+    # output = json.loads(clientsocket.recv(32768).decode('utf-8'))
     print(output)
     clientsocket.close()
     return(output)
@@ -56,6 +59,7 @@ def clientsocket(json):
 class loginPage:
 
     def __init__(self):
+
         self.ui = QUiLoader().load('login.ui')
         self.ui.textBrowser.setText(news)
         self.ui.LoginButton.clicked.connect(self.pushButton_clicked)
@@ -75,16 +79,15 @@ class loginPage:
         username = self.ui.username.text()
         password = self.ui.password.text()
         if self.ui.remember.isChecked():
-            with open('config.ini', 'w') as configfile:
+            with open('config.ini', 'w', encoding='utf-8') as configfile:
                 config["login"]["username"]=username
                 config["login"]["password"]=password
                 config.write(configfile)
         else:
-            with open('config.ini', 'w') as configfile:
+            with open('config.ini', 'w', encoding='utf-8') as configfile:
                 config["login"]["username"]=""
                 config["login"]["password"]=""
                 config.write(configfile)
-
 
     def toRegister(self):
         global register
@@ -152,6 +155,62 @@ class mainPage:
 
     def __init__(self):
         self.ui = QUiLoader().load('main.ui')
+        self.ui.usernamelabel.setText(username)
+        mainPage.checkpermission(username)
+        self.ui.permissionlabel.setText(userpermission)
+        self.ui.sendButton.clicked.connect(self.send)
+        self.ui.refreshChatButton.clicked.connect(self.refreshChat)
+
+    def refreshChat(self):
+        time = self.ui.timespinBox.value()
+        json = {'mode':'searchchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'time':time}
+        output = clientsocket(json)
+        if output["status"] == "success":
+            chatmessages = ast.literal_eval(base64.b64decode(output["results"]).decode('utf-8'))
+            print(chatmessages)
+            outputmessages = ""
+            for result in chatmessages:
+                datetime = result[0]
+                sender = result[1]
+                receiver = result[2]
+                content = result[3]
+                # formatted_result = '<font color="#FF0000">{}</font> {} : {}'.format(datetime, sender, content)
+                formatted_result = '<font color="#FF0000">{}</font>: {}'.format(sender, content)
+                outputmessages += (formatted_result + "<br>")
+            self.ui.chatmessages.setHtml(outputmessages)
+            pass
+        elif output["status"] == "fail":
+            alert.illegal()
+            self.ui.chatmessages.setHtml("")
+
+    def send(self):
+        message = self.ui.sendmessage.toPlainText()
+        if message == "":
+            return 0
+        mainPage.insertchat("",message)
+        self.ui.sendmessage.clear()
+
+    def insertchat(receiver = "",content = ""):
+        json = {'mode':'insertchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'receiver':receiver,'content':content}
+        output = clientsocket(json)
+        if output["status"] == "success":
+            pass
+        elif output["status"] == "fail":
+            alert.illegal()
+        elif output["status"] == "illegal":
+            alert.illegal()
+
+    def checkpermission(username):
+        global userpermission
+        try:
+            json = {'mode':'checkpermission','username':username}
+            output = clientsocket(json)
+            if output["status"] == "success":
+                userpermission = output["permission"]
+            else:
+                userpermission = ""
+        except:
+            userpermission = ""
 
 class alert:
 
@@ -185,7 +244,7 @@ class alert:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("用户名或密码错误")
-        msg.setWindowTitle("登录失败")
+        msg.setWindowTitle("校验失败")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
 
@@ -193,7 +252,7 @@ class alert:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.NoIcon)
         msg.setText("用户 "+username+" 登录成功")
-        msg.setWindowTitle("登录成功")
+        msg.setWindowTitle("校验成功")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
 

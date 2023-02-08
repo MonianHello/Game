@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>260</height>
+    <width>680</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="font">
@@ -24,8 +24,8 @@
   <widget class="QPushButton" name="ExitButton">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>200</y>
+     <x>600</x>
+     <y>330</y>
      <width>61</width>
      <height>41</height>
     </rect>
@@ -33,6 +33,172 @@
    <property name="text">
     <string>退出</string>
    </property>
+  </widget>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>420</width>
+     <height>361</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="chat">
+    <attribute name="title">
+     <string>聊天</string>
+    </attribute>
+    <widget class="QTextEdit" name="chatmessages">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>280</width>
+       <height>230</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="html">
+      <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Tahoma'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="placeholderText">
+      <string>若长时间无显示，请尝试手动刷新</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="sendButton">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>260</y>
+       <width>80</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Tahoma</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>发送</string>
+     </property>
+    </widget>
+    <widget class="QPlainTextEdit" name="sendmessage">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>250</y>
+       <width>280</width>
+       <height>61</height>
+      </rect>
+     </property>
+     <property name="placeholderText">
+      <string>请输入聊天信息</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="refreshChatButton">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>60</y>
+       <width>80</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>刷新</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="timespinBox">
+     <property name="geometry">
+      <rect>
+       <x>350</x>
+       <y>20</y>
+       <width>51</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="suffix">
+      <string>h</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="maximum">
+      <number>24</number>
+     </property>
+     <property name="value">
+      <number>12</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>300</x>
+       <y>22</y>
+       <width>41</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>范围:</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="temp">
+    <attribute name="title">
+     <string>临时</string>
+    </attribute>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>40</y>
+     <width>211</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>当前用户：</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="usernamelabel">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>权限组：</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="permissionlabel">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>
@@ -44,12 +210,12 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>444</x>
-     <y>216</y>
+     <x>634</x>
+     <y>346</y>
     </hint>
     <hint type="destinationlabel">
-     <x>486</x>
-     <y>229</y>
+     <x>576</x>
+     <y>383</y>
     </hint>
    </hints>
   </connection>
