@@ -1,13 +1,17 @@
 # -*- coding: UTF-8 -*_
 import configparser
 import socket
-from PySide2.QtWidgets import QApplication
+from PySide2.QtWidgets import QApplication,QMessageBox
 from PySide2.QtUiTools import QUiLoader
+from PySide2.QtGui import QTextCursor
+from PySide2.QtCore import QThread, Signal
 import ast
-from PySide2.QtWidgets import QMessageBox
 import os
 import hashlib
 import base64
+import time
+
+intervalCounter = 12
 
 # Initialize configuration file
 try:
@@ -55,6 +59,19 @@ def clientsocket(jsons):
     print(output)
     clientsocket.close()
     return(output)
+
+class autoRefreshChatThread(QThread):
+    autoRefreshChat_signal = Signal(str)
+
+    def __init__(self):
+        QThread.__init__(self)
+
+    def run(self):
+        autoChatMessages = ""
+        while True:
+            autoChatMessages = str(mainPage.searchChat(mainPage,username,password,intervalCounter))
+            self.autoRefreshChat_signal.emit(str(autoChatMessages))
+            time.sleep(5)
 
 class loginPage:
 
@@ -160,14 +177,21 @@ class mainPage:
         self.ui.permissionlabel.setText(userpermission)
         self.ui.sendButton.clicked.connect(self.send)
         self.ui.refreshChatButton.clicked.connect(self.refreshChat)
+        self.autoRefreshChat_thread = autoRefreshChatThread()
+        self.autoRefreshChat_thread.autoRefreshChat_signal.connect(self.updateChatMessages)
+        self.autoRefreshChat_thread.start()
 
-    def refreshChat(self):
-        time = self.ui.timespinBox.value()
+    def updateChatMessages(self, autoChatMessages):
+        self.ui.chatmessages.setHtml(autoChatMessages)
+        cursor = self.ui.chatmessages.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.ui.chatmessages.setTextCursor(cursor)
+
+    def searchChat(self,username,password,time):
         json = {'mode':'searchchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'time':time}
         output = clientsocket(json)
         if output["status"] == "success":
             chatmessages = ast.literal_eval(base64.b64decode(output["results"]).decode('utf-8'))
-            print(chatmessages)
             outputmessages = ""
             for result in chatmessages:
                 datetime = result[0]
@@ -177,11 +201,16 @@ class mainPage:
                 # formatted_result = '<font color="#FF0000">{}</font> {} : {}'.format(datetime, sender, content)
                 formatted_result = '<font color="#FF0000">{}</font>: {}'.format(sender, content)
                 outputmessages += (formatted_result + "<br>")
-            self.ui.chatmessages.setHtml(outputmessages)
-            pass
+            return outputmessages
         elif output["status"] == "fail":
             alert.illegal()
-            self.ui.chatmessages.setHtml("")
+            return ""
+
+    def refreshChat(self):
+        self.ui.chatmessages.setHtml(self.searchChat(username,password,intervalCounter))
+        cursor = self.ui.chatmessages.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.ui.chatmessages.setTextCursor(cursor)
 
     def send(self):
         message = self.ui.sendmessage.toPlainText()
@@ -189,6 +218,7 @@ class mainPage:
             return 0
         mainPage.insertchat("",message)
         self.ui.sendmessage.clear()
+        self.refreshChat()
 
     def insertchat(receiver = "",content = ""):
         json = {'mode':'insertchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'receiver':receiver,'content':content}

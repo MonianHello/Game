@@ -91,6 +91,9 @@ p, li { white-space: pre-wrap; }
      <property name="text">
       <string>发送</string>
      </property>
+     <property name="shortcut">
+      <string>Ctrl+Return</string>
+     </property>
     </widget>
     <widget class="QPlainTextEdit" name="sendmessage">
      <property name="geometry">
@@ -102,55 +105,20 @@ p, li { white-space: pre-wrap; }
       </rect>
      </property>
      <property name="placeholderText">
-      <string>请输入聊天信息</string>
+      <string>Enter 换行，Ctrl+Enter 发送</string>
      </property>
     </widget>
     <widget class="QPushButton" name="refreshChatButton">
      <property name="geometry">
       <rect>
        <x>310</x>
-       <y>60</y>
+       <y>20</y>
        <width>80</width>
        <height>40</height>
       </rect>
      </property>
      <property name="text">
       <string>刷新</string>
-     </property>
-    </widget>
-    <widget class="QSpinBox" name="timespinBox">
-     <property name="geometry">
-      <rect>
-       <x>350</x>
-       <y>20</y>
-       <width>51</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="suffix">
-      <string>h</string>
-     </property>
-     <property name="prefix">
-      <string/>
-     </property>
-     <property name="maximum">
-      <number>24</number>
-     </property>
-     <property name="value">
-      <number>12</number>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_3">
-     <property name="geometry">
-      <rect>
-       <x>300</x>
-       <y>22</y>
-       <width>41</width>
-       <height>26</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>范围:</string>
      </property>
     </widget>
    </widget>
@@ -160,7 +128,7 @@ p, li { white-space: pre-wrap; }
     </attribute>
    </widget>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>450</x>
