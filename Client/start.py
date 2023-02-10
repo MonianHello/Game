@@ -10,8 +10,9 @@ import os
 import hashlib
 import base64
 import time
+from datetime import datetime
 
-intervalCounter = 12
+autoUpdateFrequency = 5
 
 # Initialize configuration file
 try:
@@ -61,17 +62,24 @@ def clientsocket(jsons):
     return(output)
 
 class autoRefreshChatThread(QThread):
+    stop_signal = Signal()
     autoRefreshChat_signal = Signal(str)
 
-    def __init__(self):
-        QThread.__init__(self)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.stop_requested = False
 
     def run(self):
-        autoChatMessages = ""
-        while True:
-            autoChatMessages = str(mainPage.searchChat(mainPage,username,password,intervalCounter))
+        global autoUpdateFrequency
+        while not self.stop_requested:
+            autoChatMessages = str(mainPage.searchChat(mainPage,username,password))
             self.autoRefreshChat_signal.emit(str(autoChatMessages))
-            time.sleep(5)
+            time.sleep(autoUpdateFrequency)
+        self.stop_signal.emit()
+
+    def stop(self):
+        self.stop_requested = True
+
 
 class loginPage:
 
@@ -170,16 +178,38 @@ class registerPage:
 
 class mainPage:
 
+    isAutoRefreshChat = True
+
     def __init__(self):
         self.ui = QUiLoader().load('main.ui')
         self.ui.usernamelabel.setText(username)
         mainPage.checkpermission(username)
         self.ui.permissionlabel.setText(userpermission)
         self.ui.sendButton.clicked.connect(self.send)
+        self.ui.autoRefreshChatButton.clicked.connect(self.isAutoRefreshChatButton)
         self.ui.refreshChatButton.clicked.connect(self.refreshChat)
-        self.autoRefreshChat_thread = autoRefreshChatThread()
-        self.autoRefreshChat_thread.autoRefreshChat_signal.connect(self.updateChatMessages)
-        self.autoRefreshChat_thread.start()
+        self.ui.autoUpdateFrequencySpinBox.valueChanged.connect(self.handleValueChange)
+        self.thread = autoRefreshChatThread()
+        self.thread.stop_signal.connect(self.thread.quit)
+        self.thread.autoRefreshChat_signal.connect(self.updateChatMessages)
+        self.thread.start()
+
+    def handleValueChange(self, value):
+        global autoUpdateFrequency
+        autoUpdateFrequency = value
+    
+    def isAutoRefreshChatButton(self):
+        if self.isAutoRefreshChat:
+            self.ui.autoRefreshChatButton.setText("启用自动刷新")
+            self.thread.stop()
+            self.isAutoRefreshChat = False
+        else:
+            self.ui.autoRefreshChatButton.setText("禁用自动刷新")
+            self.thread = autoRefreshChatThread()
+            self.thread.stop_signal.connect(self.thread.quit)
+            self.thread.autoRefreshChat_signal.connect(self.updateChatMessages)
+            self.thread.start()
+            self.isAutoRefreshChat = True
 
     def updateChatMessages(self, autoChatMessages):
         self.ui.chatmessages.setHtml(autoChatMessages)
@@ -187,27 +217,46 @@ class mainPage:
         cursor.movePosition(QTextCursor.End)
         self.ui.chatmessages.setTextCursor(cursor)
 
-    def searchChat(self,username,password,time):
-        json = {'mode':'searchchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'time':time}
+    def searchChat(self,username,password):
+        json = {'mode':'searchchat','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest()}
         output = clientsocket(json)
         if output["status"] == "success":
-            chatmessages = ast.literal_eval(base64.b64decode(output["results"]).decode('utf-8'))
+            messages = ast.literal_eval(base64.b64decode(output["results"]).decode('utf-8'))
             outputmessages = ""
-            for result in chatmessages:
-                datetime = result[0]
-                sender = result[1]
-                receiver = result[2]
-                content = result[3]
-                # formatted_result = '<font color="#FF0000">{}</font> {} : {}'.format(datetime, sender, content)
-                formatted_result = '<font color="#FF0000">{}</font>: {}'.format(sender, content)
+            def get_day_of_message(date_str):
+                date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                now = datetime.now()
+                delta = now - date
+                if delta.days == 0:
+                    return "今天"
+                elif delta.days == 1:
+                    return "昨天"
+                elif delta.days == 2:
+                    return "前天"
+                else:
+                    return date.strftime("%Y年%m月%d日")
+            day_of_messages = {}
+            for message in messages:
+                day = get_day_of_message(message[0])
+                if day not in day_of_messages:
+                    day_of_messages[day] = []
+                day_of_messages[day].append(message)
+
+            for day, messages in day_of_messages.items():
+                formatted_result = '<font color="#FF0000">{}</font>'.format(day)
                 outputmessages += (formatted_result + "<br>")
+                for message in messages:
+                    datetimes, sender, receiver, content = message
+                    datetimes = datetime.strptime(datetimes,'%Y-%m-%d %H:%M:%S').strftime('%H:%M')
+                    formatted_result = '<font color="#8b9999">[{}]</font> <font color="#008080">{}</font>:<font color="#000000"> {}</font>'.format(datetimes, sender, content)
+                    outputmessages += (formatted_result + "<br>")
             return outputmessages
         elif output["status"] == "fail":
             alert.illegal()
             return ""
 
     def refreshChat(self):
-        self.ui.chatmessages.setHtml(self.searchChat(username,password,intervalCounter))
+        self.ui.chatmessages.setHtml(self.searchChat(username,password))
         cursor = self.ui.chatmessages.textCursor()
         cursor.movePosition(QTextCursor.End)
         self.ui.chatmessages.setTextCursor(cursor)

@@ -17,13 +17,11 @@ config.read('config.ini', encoding='utf-8')
 host = config.get('network', 'ip')
 port = int(config.get('network', 'port'))
 
-def searchchat(username = "",time="2"):
-   # username 用于判断私聊，time 用于判断范围
+def searchchat(username):
    try:
       db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
       cursor = db.cursor()
-      timedifference = datetime.datetime.now() - datetime.timedelta(hours=int(time))
-      query = "SELECT datetime, sender, receiver, content FROM chat WHERE datetime >= '%s'" % (timedifference)
+      query = "SELECT datetime, sender, receiver, content FROM chat"
       cursor.execute(query)
       results = list(cursor.fetchall())
       cursor.close()
@@ -211,7 +209,7 @@ def main(clientsocket,addr):
          print("insertchat:",output)
    elif input["mode"] == "searchchat":
       if ast.literal_eval(login(input["username"],input["password"]).decode('utf-8'))["status"] == "success":
-         output = searchchat(input["username"],input["time"])
+         output = searchchat(input["username"])
          clientsocket.send(output)
          print("searchchat:账户校验通过",input["username"])
          print("searchchat:",output)
