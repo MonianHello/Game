@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*_
 import configparser
 import socket
-from PySide2.QtWidgets import QApplication,QMessageBox
+from PySide2.QtWidgets import QApplication,QMessageBox,QTableWidget, QTableWidgetItem
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtGui import QTextCursor
 from PySide2.QtCore import QThread, Signal
@@ -189,10 +189,28 @@ class mainPage:
         self.ui.autoRefreshChatButton.clicked.connect(self.isAutoRefreshChatButton)
         self.ui.refreshChatButton.clicked.connect(self.refreshChat)
         self.ui.autoUpdateFrequencySpinBox.valueChanged.connect(self.handleValueChange)
+        
+        self.ui.gacha1Button.clicked.connect(lambda:self.gacha(1))
+        self.ui.gacha10Button.clicked.connect(lambda:self.gacha(10))
+        self.ui.gacha100Button.clicked.connect(lambda:self.gacha(100))
+        self.ui.gacha1000Button.clicked.connect(lambda:self.gacha(1000))
+        self.ui.gacha10000Button.clicked.connect(lambda:self.gacha(10000))
+
+
+        # if userpermission == "admin":
+        #     pass
+        # else:
+        #     self.ui.tabWidget.removeTab(1)
+            
         self.thread = autoRefreshChatThread()
         self.thread.stop_signal.connect(self.thread.quit)
         self.thread.autoRefreshChat_signal.connect(self.updateChatMessages)
         self.thread.start()
+
+    def gacha(self,count):
+        json = {'mode':'gacha','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'count':count}
+        output = clientsocket(json)
+        self.ui.gachaReturnTextBrowser.setHtml(str(output))
 
     def handleValueChange(self, value):
         global autoUpdateFrequency
@@ -225,7 +243,8 @@ class mainPage:
             outputmessages = ""
             def get_day_of_message(date_str):
                 date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-                now = datetime.now()
+                # now = datetime.now()
+                now = datetime.combine(datetime.now().date(), datetime.max.time())
                 delta = now - date
                 if delta.days == 0:
                     return "今天"

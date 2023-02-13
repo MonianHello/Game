@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>680</width>
-    <height>400</height>
+    <width>1052</width>
+    <height>741</height>
    </rect>
   </property>
   <property name="font">
@@ -24,8 +24,8 @@
   <widget class="QPushButton" name="ExitButton">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>330</y>
+     <x>980</x>
+     <y>690</y>
      <width>61</width>
      <height>41</height>
     </rect>
@@ -39,12 +39,12 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>420</width>
-     <height>361</height>
+     <width>801</width>
+     <height>711</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="chat">
     <attribute name="title">
@@ -53,10 +53,10 @@
     <widget class="QTextEdit" name="chatmessages">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>280</width>
-       <height>230</height>
+       <x>20</x>
+       <y>20</y>
+       <width>611</width>
+       <height>541</height>
       </rect>
      </property>
      <property name="readOnly">
@@ -76,8 +76,8 @@ p, li { white-space: pre-wrap; }
     <widget class="QPushButton" name="sendButton">
      <property name="geometry">
       <rect>
-       <x>310</x>
-       <y>260</y>
+       <x>660</x>
+       <y>590</y>
        <width>80</width>
        <height>40</height>
       </rect>
@@ -98,9 +98,9 @@ p, li { white-space: pre-wrap; }
     <widget class="QPlainTextEdit" name="sendmessage">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>250</y>
-       <width>280</width>
+       <x>20</x>
+       <y>580</y>
+       <width>611</width>
        <height>61</height>
       </rect>
      </property>
@@ -111,8 +111,8 @@ p, li { white-space: pre-wrap; }
     <widget class="QPushButton" name="refreshChatButton">
      <property name="geometry">
       <rect>
-       <x>299</x>
-       <y>20</y>
+       <x>660</x>
+       <y>30</y>
        <width>101</width>
        <height>40</height>
       </rect>
@@ -124,8 +124,8 @@ p, li { white-space: pre-wrap; }
     <widget class="QPushButton" name="autoRefreshChatButton">
      <property name="geometry">
       <rect>
-       <x>300</x>
-       <y>70</y>
+       <x>660</x>
+       <y>80</y>
        <width>101</width>
        <height>40</height>
       </rect>
@@ -137,8 +137,8 @@ p, li { white-space: pre-wrap; }
     <widget class="QLabel" name="label_3">
      <property name="geometry">
       <rect>
-       <x>295</x>
-       <y>125</y>
+       <x>650</x>
+       <y>130</y>
        <width>61</width>
        <height>20</height>
       </rect>
@@ -150,8 +150,8 @@ p, li { white-space: pre-wrap; }
     <widget class="QSpinBox" name="autoUpdateFrequencySpinBox">
      <property name="geometry">
       <rect>
-       <x>360</x>
-       <y>125</y>
+       <x>730</x>
+       <y>130</y>
        <width>46</width>
        <height>22</height>
       </rect>
@@ -167,16 +167,112 @@ p, li { white-space: pre-wrap; }
      </property>
     </widget>
    </widget>
-   <widget class="QWidget" name="temp">
+   <widget class="QWidget" name="gacha">
     <attribute name="title">
-     <string>临时</string>
+     <string>抽卡</string>
     </attribute>
+    <widget class="QTextBrowser" name="gachaReturnTextBrowser">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>60</y>
+       <width>501</width>
+       <height>531</height>
+      </rect>
+     </property>
+     <property name="textInteractionFlags">
+      <set>Qt::NoTextInteraction</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gacha1Button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>130</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>1次扭蛋</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gacha10Button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>180</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>10次扭蛋</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gacha100Button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>230</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>100次扭蛋</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gacha1000Button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>280</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>1000次扭蛋</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="gacha10000Button">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>330</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>10000次扭蛋</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="administration">
+    <attribute name="title">
+     <string>管理</string>
+    </attribute>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>40</y>
+       <width>131</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>正在制作中...</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>820</x>
      <y>40</y>
      <width>211</width>
      <height>61</height>

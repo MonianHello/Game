@@ -10,6 +10,7 @@ import ctypes
 import threading
 import colorama
 import base64
+import random
 
 colorama.init()
 config = configparser.ConfigParser()
@@ -17,6 +18,166 @@ config.read('config.ini', encoding='utf-8')
 host = config.get('network', 'ip')
 port = int(config.get('network', 'port'))
 
+def mysqlgacha(uid,count):
+   def gacha(uid,gachatimes):
+      def get_random_name(items):
+
+         # 传入由名称和概率组成的二维数组，依照概率返回名称
+
+         # 使用random.random()生成一个0到1之间的随机数，然后乘以累积概率，
+         # 以确定随机生成的数字在给定的范围内。最后，循环遍历每个项目，
+         # 如果随机数小于该项目的累积概率，则返回该项目的名称。
+         
+         cumulative_probability = 0
+         for item in items:
+            cumulative_probability += item[1]
+            item.append(cumulative_probability)
+         random_number = random.random() * cumulative_probability
+         for item in items:
+            if random_number < item[2]:
+               return item[0]
+      # print("uid",uid,"抽了",gachatimes,"次！")
+      from collections import Counter
+      def count_items(arr):
+         count_dict = dict(Counter(arr))
+         return [[key, value] for key, value in count_dict.items()]
+      getitems = []
+      property = ast.literal_eval(config.get('gacha', 'property'))
+      for i in range(gachatimes):
+         getitems.append(get_random_name(property))
+      return count_items(getitems)
+   import json
+   db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
+   cursor = db.cursor()
+   cursor.execute("SELECT items FROM useritems WHERE uid = %s", (uid,))
+   result = cursor.fetchone()
+   if result is None:
+      # print("No items found for the given UID")
+      pass
+   else:
+      items = result[0]
+      items = json.loads(items)
+      item_1001_found = False
+      item_1001_index = -1
+      for i, item in enumerate(items):
+         if item[0] == 1001:
+               item_1001_found = True
+               item_1001_index = i
+               break
+      if item_1001_found:
+         if items[item_1001_index][1] >= count:
+               gachaget = gacha(uid,count)
+               items[item_1001_index][1] -= count
+               cursor.execute("UPDATE useritems SET items = %s WHERE uid = %s", (json.dumps(items), uid))
+               db.commit()
+               # print("Gacha successful!")
+         else:
+               gachaget = []
+               # print("Item quantity not sufficient")
+      else:
+         gachaget = []
+         # print("Item not found")
+   cursor.close()
+   db.close()
+   return gachaget
+
+def get_items(star_list):
+   # 连接数据库
+   db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
+   cursor = db.cursor()
+   # 用来存放物品信息的字典
+   item_dict = {}
+   # 遍历每个星级的信息
+   for star, count in star_list:
+      # 查询该星级的所有物品
+      query = "SELECT id, name, type FROM items WHERE stars = '{}'".format(star)
+      cursor.execute(query)
+      items = cursor.fetchall()
+      # 遍历每个物品，随机获取数量
+      for i in range(count):
+         item = random.choice(items)
+         item_id, name, item_type = item
+         key = "{}_{}".format(star, name)
+         if key not in item_dict:
+               item_dict[key] = [item_id, name, item_type, 0]
+         item_dict[key][3] += 1
+   # 关闭数据库连接
+   db.close()
+   # 将字典的值转换为列表，并返回
+   id_name_type_count = list(item_dict.values()) # [1065, '闪电之刃', '武器装备', 32]
+   id_count = [i[:1] + i[3:] for i in id_name_type_count] # [1065, 32]
+   return id_name_type_count
+
+def updateusersitem(uid,id_name_type_count,artificial = False):
+   # artificial是用来方便以后手动传入的
+   if not artificial:
+      items = [i[:1] + i[3:] for i in id_name_type_count] # [1065, 32]
+   # 连接数据库
+   conn = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
+   cursor = conn.cursor()
+   # 查询是否有该用户的记录
+   select_sql = "SELECT items FROM useritems WHERE uid = %s"
+   cursor.execute(select_sql, (uid,))
+   result = cursor.fetchone()
+   if result:
+      # 如果有该用户的记录，更新记录
+      old_items = eval(result[0])
+      for item in items:
+         item_found = False
+         for i in range(len(old_items)):
+               if old_items[i][0] == item[0]:
+                  old_items[i][1] += item[1]
+                  item_found = True
+                  break
+         if not item_found:
+               old_items.append(item)
+      update_sql = "UPDATE useritems SET items = %s WHERE uid = %s"
+      cursor.execute(update_sql, (str(old_items), uid))
+   else:
+      # 如果没有该用户的记录，新增记录
+      insert_sql = "INSERT INTO useritems (uid, items) VALUES (%s, %s)"
+      cursor.execute(insert_sql, (uid, str(items)))
+   # 提交事务
+   conn.commit()
+   # 关闭连接
+   cursor.close()
+   conn.close()
+
+def maingacha(uid,count):
+   output = []
+   a = mysqlgacha(uid,count)
+   output.append(a)
+   b = get_items(a)
+   output.append(b)
+   print(a,b)
+   updateusersitem(uid,b)
+   print("本次",uid,"抽卡共",count,"次，得到以下结果：")
+   if a == []:
+      print("结果为空，通常是由于抽奖用券不足导致的")
+   else:
+      print("星级统计：")
+      for item in a:
+         print("{}星：{}个".format(item[0], item[1]))
+      print("物品统计：")
+      for item in b:
+         print("{} {}({}) {}个".format(item[0], item[1],item[2], item[3]))
+   return(output)
+
+def servergacha(username,count):
+   try:
+      db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
+      cursor = db.cursor()
+      query = "SELECT uid FROM users WHERE username = '%s'" % (username)
+      cursor.execute(query)
+      uid = cursor.fetchall()[0][0]
+      cursor.close()
+      db.close()
+      return str({'mode':'gacha','status':'success','results':maingacha(uid,count)}).encode('utf-8')
+   except Exception as e:
+      print("\n"+colorama.Fore.RED + colorama.Back.WHITE + "  SERVER DATABASE ERROR  " + colorama.Fore.RESET + colorama.Back.RESET + "\n")
+      print("用户尝试发送抽卡请求时，服务器发生了以下错误：")
+      print(e , "\n")
+      return str({'mode':'gacha','status':'fail'}).encode('utf-8')
 def searchchat(username):
    try:
       db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
@@ -218,6 +379,17 @@ def main(clientsocket,addr):
          clientsocket.send(output)
          print("searchchat:账户校验失败",input["username"])
          print("searchchat:",output)
+   elif input["mode"] == "gacha":
+      if ast.literal_eval(login(input["username"],input["password"]).decode('utf-8'))["status"] == "success":
+         output = servergacha(input["username"],input["count"])
+         clientsocket.send(output)
+         print("gacha:账户校验通过",input["username"])
+         print("gacha:",output)
+      else:
+         output = str({'mode':'gacha','status':'illegal'}).encode('utf-8')
+         clientsocket.send(output)
+         print("gacha:账户校验失败",input["username"])
+         print("gacha:",output)
    clientsocket.close()
 
 # 多线程：threading.Thread(target=beep, args=(3,500,2000)).start()
