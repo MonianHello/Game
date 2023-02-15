@@ -188,14 +188,11 @@ class mainPage:
         self.ui.sendButton.clicked.connect(self.send)
         self.ui.autoRefreshChatButton.clicked.connect(self.isAutoRefreshChatButton)
         self.ui.refreshChatButton.clicked.connect(self.refreshChat)
+        self.ui.searchItemButton.clicked.connect(self.searchItem)
         self.ui.autoUpdateFrequencySpinBox.valueChanged.connect(self.handleValueChange)
         
         self.ui.gacha1Button.clicked.connect(lambda:self.gacha(1))
         self.ui.gacha10Button.clicked.connect(lambda:self.gacha(10))
-        self.ui.gacha100Button.clicked.connect(lambda:self.gacha(100))
-        self.ui.gacha1000Button.clicked.connect(lambda:self.gacha(1000))
-        self.ui.gacha10000Button.clicked.connect(lambda:self.gacha(10000))
-
 
         # if userpermission == "admin":
         #     pass
@@ -207,10 +204,29 @@ class mainPage:
         self.thread.autoRefreshChat_signal.connect(self.updateChatMessages)
         self.thread.start()
 
+    def searchItem(self):
+        json = {'mode':'usersearchdata','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest()}
+        output = clientsocket(json)
+        items = ast.literal_eval(base64.b64decode(output["results"]).decode('utf-8'))
+        if output["status"] == "success":
+            html="你当前持有以下物品：<br>"
+            for i in items:
+                print(i)
+                html = html + "ID:{} Name:{} Type:{} Stars:{} Count:{}".format(i[0],i[1],i[2],i[3],i[4]) + "<br>"
+        self.ui.gachaReturnTextBrowser.setHtml(html)
+
     def gacha(self,count):
         json = {'mode':'gacha','username':username,'password':hashlib.sha256(password.encode('utf-8')).hexdigest(),'count':count}
         output = clientsocket(json)
-        self.ui.gachaReturnTextBrowser.setHtml(str(output))
+        if output["status"] == "success":
+            if output["results"][1] == []:
+                html = "抽奖券不足！"
+            else:
+                html="你得到了以下物品：<br>"
+                for i in output["results"][1]:
+                    print(i)
+                    html = html + "ID:{} Name:{} Type:{} Count:{} Stars:{}".format(i[0],i[1],i[2],i[3],i[4]) + "<br>"
+        self.ui.gachaReturnTextBrowser.setHtml(html)
 
     def handleValueChange(self, value):
         global autoUpdateFrequency

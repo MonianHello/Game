@@ -18,6 +18,49 @@ config.read('config.ini', encoding='utf-8')
 host = config.get('network', 'ip')
 port = int(config.get('network', 'port'))
 
+def usersearchdata(username):
+   try:
+      lists = []
+
+      db1 = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db')) 
+      cursor1 = db1.cursor()
+      cursor1.execute("SELECT uid FROM users WHERE username = %s", (username,))
+      result1 = cursor1.fetchone()
+      db1.commit()
+      cursor1.close()
+      db1.close()
+      db2 = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db')) 
+      cursor2 = db2.cursor()
+      cursor2.execute("SELECT items FROM useritems WHERE uid = %s", (result1[0],))
+      result2 = cursor2.fetchone()
+      db2.commit()
+      cursor2.close()
+      db2.close()
+
+      result3 = ast.literal_eval((result2[0]))
+      mysqlsearch = result3
+
+      for item in mysqlsearch:
+         db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db')) 
+         id_name_type_stars_count = []
+         cursor = db.cursor()
+         cursor.execute("SELECT name,type,stars FROM items WHERE id = %s", (item[0],))
+         result = cursor.fetchone()
+         id_name_type_stars_count.append(item[0])
+         id_name_type_stars_count.append(result[0])
+         id_name_type_stars_count.append(result[1])
+         id_name_type_stars_count.append(result[2])
+         id_name_type_stars_count.append(item[1])
+         lists.append(id_name_type_stars_count)
+         db.commit()
+         cursor.close()
+         db.close()
+      return str({'mode':'usersearchdata','status':'success',"results":base64.b64encode(str(lists).encode('utf-8'))}).encode('utf-8')
+   except Exception as e:
+      print("\n"+colorama.Fore.RED + colorama.Back.WHITE + "  SERVER DATABASE ERROR  " + colorama.Fore.RESET + colorama.Back.RESET + "\n")
+      print("用户尝试查询持有物品时，服务器发生了以下错误：")
+      print(e , "\n")
+      return str({'mode':'usersearchdata','status':'fail'}).encode('utf-8')
 def mysqlgacha(uid,count):
    def gacha(uid,gachatimes):
       def get_random_name(items):
@@ -148,8 +191,6 @@ def maingacha(uid,count):
    a = mysqlgacha(uid,count)
    output.append(a)
    b = get_items(a)
-   output.append(b)
-   print(a,b)
    updateusersitem(uid,b)
    print("本次",uid,"抽卡共",count,"次，得到以下结果：")
    if a == []:
@@ -160,7 +201,16 @@ def maingacha(uid,count):
          print("{}星：{}个".format(item[0], item[1]))
       print("物品统计：")
       for item in b:
+         db1 = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db')) 
+         cursor1 = db1.cursor()
+         cursor1.execute("SELECT stars FROM items WHERE id = %s", (item[0],))
+         result1 = cursor1.fetchone()
+         db1.commit()
+         cursor1.close()
+         db1.close()
+         item.append(result1[0])
          print("{} {}({}) {}个".format(item[0], item[1],item[2], item[3]))
+   output.append(b)
    return(output)
 
 def servergacha(username,count):
@@ -178,6 +228,7 @@ def servergacha(username,count):
       print("用户尝试发送抽卡请求时，服务器发生了以下错误：")
       print(e , "\n")
       return str({'mode':'gacha','status':'fail'}).encode('utf-8')
+
 def searchchat(username):
    try:
       db = MySQLdb.connect(host=config.get('network', 'ip'), user=config.get('mysql', 'name'), passwd=config.get('mysql', 'password'),db=config.get('mysql', 'db'))
@@ -390,6 +441,17 @@ def main(clientsocket,addr):
          clientsocket.send(output)
          print("gacha:账户校验失败",input["username"])
          print("gacha:",output)
+   elif input["mode"] == "usersearchdata":
+      if ast.literal_eval(login(input["username"],input["password"]).decode('utf-8'))["status"] == "success":
+         output = usersearchdata(input["username"])
+         clientsocket.send(output)
+         print("usersearchdata:账户校验通过",input["username"])
+         print("usersearchdata:",output)
+      else:
+         output = str({'mode':'usersearchdata','status':'illegal'}).encode('utf-8')
+         clientsocket.send(output)
+         print("usersearchdata:账户校验失败",input["username"])
+         print("usersearchdata:",output)
    clientsocket.close()
 
 # 多线程：threading.Thread(target=beep, args=(3,500,2000)).start()
